@@ -1,0 +1,42 @@
+#!/bin/bash
+#Spencer "Spinjrock" Oswald
+#A simple bash script to get everything running for the kn1gh7 logs plugin
+
+echo "Warning: Please ensure that auditd is installed on this system and running"
+read -p "Press [Enter] to continue..."
+
+echo "Copying kn1gh7.conf to /etc/audit/plugins.d..."
+cp -v kn1gh7.conf /etc/audit/plugins.d/kn1gh7.conf
+echo "Successfully copied kn1gh7.conf to /etc/audit/plugins.d!"
+
+echo "Setting permissions 640 on /etc/audit/plugins.d/kn1gh7.conf..."
+chmod -v 640 /etc/audit/plugins.d/kn1gh7.conf
+echo "Successfully set permissions 640 on /etc/audit/plugins.d/kn1gh7.conf!"
+
+echo "Copying kn1gh7.rules to /etc/audit/rules.d..."
+cp -v kn1gh7.rules /etc/audit/rules.d/kn1gh7.rules
+echo "Successfully copied kn1gh7.rules to /etc/audit.rules.d!"
+
+echo "Setting permissions 640 on /etc/audit/rules.d/kn1gh7.rules..."
+chmod -v 640 /etc/audit/rules.d/kn1gh7.rules
+echo "Successfully set permissions 640 on /etc/audit/rules.d/kn1gh7.rules!"
+
+echo "Copying kn1gh7 to /usr/bin..."
+cp -v kn1gh7 /usr/bin/kn1gh7
+echo "Successfully copied kn1gh7.conf to /usr/bin!"
+
+echo "Setting permissions 755 on /usr/bin/kn1gh7..."
+chmod -v 755 /usr/bin/kn1gh7
+echo "Successfully set permissions!"
+
+echo "Default log location is /var/log/audit/kn1gh7.log"
+touch /var/log/audit/kn1gh7.log
+chmod -v 640 /var/log/audit/kn1gh7.log
+
+echo "Restarting auditd..."
+service auditd restart
+echo "Successfully restarted auditd!"
+service auditd status
+
+echo "Setup Complete!"
+

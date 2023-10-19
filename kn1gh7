@@ -1,0 +1,33 @@
+#!/bin/bash -eu
+#Spencer "Spinjrock" Oswald Oct 2023
+#This is the script that pairs with the audispd plugin. It logs any traffic tagged INET, which is all socket creations with
+#a0=2 or 10 and prints their pid lineage back to 1 to a log file defined with the variable log_path
+
+
+log_path="/var/log/audit/kn1gh7.log"
+
+read log_line
+
+report_line=$(echo $log_line | ausearch -i -k INET)
+end_line=$(echo $log_line | aureport -p)
+
+
+lineage() {
+	ps --pid $1 --no-headers --format pid,ppid,args | \
+		(
+			read pid ppid args
+			echo -e "$pid\t$args" >> $log_path
+			[[ $pid -gt 1 ]] && lineage $ppid
+		)
+
+}
+
+
+#echo $report_line >> $log_path	#FOR DEBUGGING
+if [[ $report_line != "" ]]; then
+	extracted_pid=$(echo $end_line | awk '{print $17}')
+	if [[ $extracted_pid != "interest"  ]]; then
+		echo "SUSPICIOUS TRAFFIC DETECTED" >> $log_path
+		lineage $extracted_pid
+	fi
+fi

@@ -1,0 +1,8 @@
+#This rules file tags all socket creations related to internet traffic with the key INET
+
+-a always,exit -F arch=b64 -S socket -F a0=2 -k INET
+-a always,exit -F arch=b64 -S socket -F a0=10 -k INET
+
+#32bit compatability just in case
+-a always,exit -F arch=b32 -S socket -F a0=2 -k INET
+-a always,exit -F arch=b32 -S socket -F a0=10 -k INET
