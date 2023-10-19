@@ -4,6 +4,7 @@
 <h2>Known Dependencies</h2>
 <p>Any Linux System</p>
 <p>Auditd</p>
+<p>audispd-plugins</p>
 
 <h2>Installation</h2>
 <p>I would reccomend using the kn1gh7-setup script.</p>
