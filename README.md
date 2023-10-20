@@ -6,6 +6,8 @@
 <p>Any Linux System</p>
 <p>Auditd</p>
 <p>audispd-plugins</p>
+<p>python3</p>
+<p>python3-audit</p>
 
 <h2>Installation</h2>
 <p>I would reccomend using the kn1gh7-setup script.</p>
