@@ -3,6 +3,7 @@
 #A simple bash script to get everything running for the kn1gh7 logs plugin
 
 echo "Warning: Please ensure that auditd is installed on this system and running"
+echo "Warning: Please ensure the requirements in the requirements file are met"
 read -p "Press [Enter] to continue..."
 
 echo "Copying kn1gh7.conf to /etc/audit/plugins.d..."

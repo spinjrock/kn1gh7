@@ -1,33 +1,71 @@
-#!/bin/bash -eu
+#!/bin/python3
 #Spencer "Spinjrock" Oswald Oct 2023
 #This is the script that pairs with the audispd plugin. It logs any traffic tagged INET, which is all socket creations with
 #a0=2 or 10 and prints their pid lineage back to 1 to a log file defined with the variable log_path
 
+import sys
+import audit
+import auparse
+import psutil
+import os
 
-log_path="/var/log/audit/kn1gh7.log"
+LOG_FILE="/var/log/audit/kn1gh7.log"
+APPEND_PERMISSIONS="a"
 
-read log_line
+def write_to_log(line: str):
+    with open(LOG_FILE, APPEND_PERMISSIONS) as log:
+        log.write(line + "\n")
 
-report_line=$(echo $log_line | ausearch -i -k INET)
-end_line=$(echo $log_line | aureport -p)
+def lineage(p: psutil.Process, ret_string: str):
+    if p.pid == 1:
+        ret_string += os.popen("ps -o cmd,pid,tty %i\n" % p.pid).read()
+        return ret_string
+    else:
+        parent_p=psutil.Process(p.ppid())
+        ret_string=lineage(parent_p, ret_string)
+        ret_string += os.popen("ps -o cmd,pid,tty --no-headers %i\n" % p.pid).read()
+        return ret_string
 
+#Create auparser object with stdin
+for line in sys.stdin:
+    aup = auparse.AuParser(auparse.AUSOURCE_BUFFER, line);
+    if not aup:
+        print("ERROR INITIALIZING")
+        sys.exit(1)
 
-lineage() {
-	ps --pid $1 --no-headers --format pid,ppid,args | \
-		(
-			read pid ppid args
-			echo -e "$pid\t$args" >> $log_path
-			[[ $pid -gt 1 ]] && lineage $ppid
-		)
+    #read events
+    while aup.parse_next_event():
+        field_name=aup.get_field_name()
+        #Find the key field use aup.normalize_key("key")
+        while field_name != "key":
+            if aup.next_field():
+                field_name = aup.get_field_name()
+            else:
+                break
+        if field_name == "key":
+            key_value = aup.get_field_str()
+            if key_value ==  '"INET"':
+                #Get the pid
+                aup.first_field() #moves cursor back to beginning
+                field_name = aup.get_field_name()
+                while field_name != "pid":
+                    if aup.next_field():
+                        field_name=aup.get_field_name()
+                    else:
+                        break
+                if field_name == "pid":
+                    pid = int(aup.get_field_str())
+                    try:
+                        p = psutil.Process(pid)
+                        lin = lineage(p, "")
+                        write_to_log(lin)
+                    except:
+                        #Process activated and died too fast. Attempt with PPID
+                        write_to_log("Something went wrong, passing...")
+                        pass
 
-}
+            
 
-
-#echo $report_line >> $log_path	#FOR DEBUGGING
-if [[ $report_line != "" ]]; then
-	extracted_pid=$(echo $end_line | awk '{print $17}')
-	if [[ $extracted_pid != "interest"  ]]; then
-		echo "SUSPICIOUS TRAFFIC DETECTED" >> $log_path
-		lineage $extracted_pid
-	fi
-fi
+    #Close aup
+    aup = None
+sys.exit(0)

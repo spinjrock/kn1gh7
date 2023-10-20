@@ -1,0 +1,5 @@
+auditd
+audispd-plugins
+python3-audit
+python3-os
+python3-sys
