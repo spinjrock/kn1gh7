@@ -1,6 +1,6 @@
 auditd
 audispd-plugins
-python3-audit
+python3-auditd-tools
 python3-os
 python3-sys
-python3-psutils
+python3-psutil
