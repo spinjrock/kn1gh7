@@ -72,7 +72,7 @@ if __name__ == '__main__':
                             trace = lineage(Process(int(aup.get_field_str())))
                             pretty_str = "\n[LINEAGE]"
                             for p in trace:
-                                pretty_str += ("\nPID: %i, PPID: %i, CMD: %s, TTY: %s\n" % (p.pid, p.ppid, p.cmd, p.tty)) 
+                                pretty_str += ("\nPID: %i, PPID: %i, CMD: %s, TTY: %s" % (p.pid, p.ppid, p.cmd, p.tty)) 
                             pretty_str += "\n[END LINEAGE]"
                             logging.warning(pretty_str)
 
