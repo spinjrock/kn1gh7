@@ -9,7 +9,6 @@ import auparse
 import os
 import logging
 import typing
-from dataclasses import dataclass
 
 LOG_FILE="/var/log/audit/kn1gh7.log"
 APPEND_PERMISSIONS="a"
@@ -23,7 +22,6 @@ logging.basicConfig(
         datefmt='%m/%d/%Y>%I:%M:%S%p'
         )
 
-@dataclass
 class Process:
     """A little class to hold process data"""
     pid: int
