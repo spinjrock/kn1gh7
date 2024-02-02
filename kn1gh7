@@ -14,7 +14,7 @@ from dataclasses import dataclass
 LOG_FILE="/var/log/audit/kn1gh7.log"
 APPEND_PERMISSIONS="a"
 
-#Logging setup, TODO: Drop the level from debug in the end
+#Logging setup
 logging.basicConfig(
         filename = LOG_FILE,
         encoding = 'utf-8',
@@ -40,7 +40,7 @@ class Process:
 
 def lineage(p: Process) -> list[Process]:
     logging.info("Lineage: Checking in on process: "+str(p))
-    if p.ppid == 1 or 0:
+    if p.ppid == 1 or p.ppid == 0:
         return [p]
     parent_process = Process(p.ppid)
     trace = [p]
@@ -55,7 +55,7 @@ def is_tagged_inet(line:str) -> bool:
     while aup.parse_next_event():
         while aup.next_field() != False:
             if aup.get_field_name() == "key":
-                if aup.get_field_str() == "INET":
+                if aup.get_field_str() == '"INET"':
                     return True
     return False
         
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         for line in sys.stdin:
             if is_tagged_inet(line):
                 aup = auparse.AuParser(auparse.AUSOURCE_BUFFER, line)
-                while auparse.parse_next_event():
+                while aup.parse_next_event():
                     while aup.next_field() != False:
                         if aup.get_field_name() == "pid":
                             trace = lineage(Process(int(aup.get_field_str())))
