@@ -39,7 +39,7 @@ class Process:
         self.tty = os.popen("ps -o tty --no-headers %i" % id).read().strip()
 
 def lineage(p: Process) -> list[Process]:
-    logging.info("Lineage: Checking in on process: "+str(p))
+    #logging.info("Lineage: Checking in on process: "+str(p))
     if p.ppid == 1 or p.ppid == 0:
         return [p]
     parent_process = Process(p.ppid)
@@ -70,10 +70,10 @@ if __name__ == '__main__':
                     while aup.next_field() != False:
                         if aup.get_field_name() == "pid":
                             trace = lineage(Process(int(aup.get_field_str())))
-                            pretty_str = "======================[LINEAGE]====================="
+                            pretty_str = "\n[LINEAGE]"
                             for p in trace:
                                 pretty_str += ("\nPID: %i, PPID: %i, CMD: %s, TTY: %s\n" % (p.pid, p.ppid, p.cmd, p.tty)) 
-                            pretty_str += "===================================================="
+                            pretty_str += "\n[END LINEAGE]"
                             logging.warning(pretty_str)
 
     except Exception as err:
