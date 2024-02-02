@@ -70,8 +70,10 @@ if __name__ == '__main__':
                     while aup.next_field() != False:
                         if aup.get_field_name() == "pid":
                             trace = lineage(Process(int(aup.get_field_str())))
+                            pretty_str = ""
                             for p in trace:
-                                logging.warning("\nPID: %i, PPID: %i, CMD: %s, TTY: %s\n" % (p.pid, p.ppid, p.cmd, p.tty))
+                                pretty_str += ("\nPID: %i, PPID: %i, CMD: %s, TTY: %s\n" % (p.pid, p.ppid, p.cmd, p.tty))
+                            logging.warning(pretty_str)
 
     except Exception as err:
         logging.critical(err)
