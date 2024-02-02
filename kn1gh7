@@ -41,32 +41,38 @@ class Process:
 def lineage(p: Process) -> list[Process]:
     logging.info("Lineage: Checking in on process: "+str(p))
     if p.ppid == 1 or 0:
-        return [Process]
+        return [p]
     parent_process = Process(p.ppid)
-    trace = [Process]
+    trace = [p]
     trace += lineage(parent_process)
     return trace
 
 def is_tagged_inet(line:str) -> bool:
-    logging.info("is_tagged_inet checking")
     aup = auparse.AuParser(auparse.AUSOURCE_BUFFER, line)
-    logging.info("aup_initailizing")
     if not aup:
         logging.critical("is_tagged_inet: Error initalizing AuParse")
         sys.exit(1)
     while aup.parse_next_event():
-        logging.warning("Lets find the loop")
-        while aup.get_field_name() != "key" && aup.next_field() != False:
-        if aup.get_field_name() == "key":
-            logging.info(aup.get_field_string())
+        while aup.next_field() != False:
+            if aup.get_field_name() == "key":
+                if aup.get_field_str() == "INET":
+                    return True
+    return False
         
 
 if __name__ == '__main__':
     try:
         logging.info("Starting up...")
         for line in sys.stdin:
-            logging.info("Reading Line")
-            is_tagged_inet(line)
+            if is_tagged_inet(line):
+                aup = auparse.AuParser(auparse.AUSOURCE_BUFFER, line)
+                while auparse.parse_next_event():
+                    while aup.next_field() != False:
+                        if aup.get_field_name() == "pid":
+                            trace = lineage(Process(int(aup.get_field_str())))
+                            for p in trace:
+                                logging.warning("\nPID: %i, PPID: %i, CMD: %s, TTY: %s\n" % (p.pid, p.ppid, p.cmd, p.tty))
+
     except Exception as err:
         logging.critical(err)
 
