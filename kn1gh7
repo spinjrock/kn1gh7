@@ -6,66 +6,68 @@
 import sys
 import audit
 import auparse
-import psutil
 import os
+import logging
+import typing
+from dataclasses import dataclass
 
 LOG_FILE="/var/log/audit/kn1gh7.log"
 APPEND_PERMISSIONS="a"
 
-def write_to_log(line: str):
-    with open(LOG_FILE, APPEND_PERMISSIONS) as log:
-        log.write(line + "\n")
+#Logging setup, TODO: Drop the level from debug in the end
+logging.basicConfig(
+        filename = LOG_FILE,
+        encoding = 'utf-8',
+        level=logging.DEBUG,
+        format='%(asctime)s > %(levelname)s:%(message)s',
+        datefmt='%m/%d/%Y>%I:%M:%S%p'
+        )
 
-def lineage(p: psutil.Process, ret_string: str):
-    if p.pid == 1:
-        ret_string += os.popen("ps -o cmd,pid,tty %i\n" % p.pid).read()
-        return ret_string
-    else:
-        parent_p=psutil.Process(p.ppid())
-        ret_string=lineage(parent_p, ret_string)
-        ret_string += os.popen("ps -o cmd,pid,tty --no-headers %i\n" % p.pid).read()
-        return ret_string
+@dataclass
+class Process:
+    """A little class to hold process data"""
+    pid: int
+    ppid: int
+    cmd: str
+    tty: str
+    def __init__(self, id: int) -> None:
+        """Initalizes from a PID"""
+        self.pid = id
+        ppid = os.popen("ps -o ppid --no-headers %i" % id).read().strip()
+        self.ppid = int(ppid) if ppid != '' else 0
+        self.cmd = os.popen("ps -o cmd --no-headers %i" % id).read().strip()
+        self.tty = os.popen("ps -o tty --no-headers %i" % id).read().strip()
 
-#Create auparser object with stdin
-for line in sys.stdin:
-    aup = auparse.AuParser(auparse.AUSOURCE_BUFFER, line);
+def lineage(p: Process) -> list[Process]:
+    logging.info("Lineage: Checking in on process: "+str(p))
+    if p.ppid == 1 or 0:
+        return [Process]
+    parent_process = Process(p.ppid)
+    trace = [Process]
+    trace += lineage(parent_process)
+    return trace
+
+def is_tagged_inet(line:str) -> bool:
+    logging.info("is_tagged_inet checking")
+    aup = auparse.AuParser(auparse.AUSOURCE_BUFFER, line)
+    logging.info("aup_initailizing")
     if not aup:
-        print("ERROR INITIALIZING")
+        logging.critical("is_tagged_inet: Error initalizing AuParse")
         sys.exit(1)
-
-    #read events
     while aup.parse_next_event():
-        field_name=aup.get_field_name()
-        #Find the key field use aup.normalize_key("key")
-        while field_name != "key":
-            if aup.next_field():
-                field_name = aup.get_field_name()
-            else:
-                break
-        if field_name == "key":
-            key_value = aup.get_field_str()
-            if key_value ==  '"INET"':
-                #Get the pid
-                aup.first_field() #moves cursor back to beginning
-                field_name = aup.get_field_name()
-                while field_name != "pid":
-                    if aup.next_field():
-                        field_name=aup.get_field_name()
-                    else:
-                        break
-                if field_name == "pid":
-                    pid = int(aup.get_field_str())
-                    try:
-                        p = psutil.Process(pid)
-                        lin = lineage(p, "")
-                        write_to_log(lin)
-                    except:
-                        #Process activated and died too fast. Attempt with PPID
-                        write_to_log("Something went wrong, passing...")
-                        pass
+        logging.warning("Lets find the loop")
+        while aup.get_field_name() != "key" && aup.next_field() != False:
+        if aup.get_field_name() == "key":
+            logging.info(aup.get_field_string())
+        
 
-            
+if __name__ == '__main__':
+    try:
+        logging.info("Starting up...")
+        for line in sys.stdin:
+            logging.info("Reading Line")
+            is_tagged_inet(line)
+    except Exception as err:
+        logging.critical(err)
 
-    #Close aup
-    aup = None
 sys.exit(0)

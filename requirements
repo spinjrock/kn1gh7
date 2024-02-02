@@ -3,6 +3,3 @@ audispd-plugins
 python3-audit
 python3-os
 python3-sys
-python3-psutil
-gcc
-python3-devel
